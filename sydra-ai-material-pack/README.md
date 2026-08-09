@@ -1,42 +1,28 @@
-# SYDRA 教学开发素材包
+# SYDRA 开发素材说明
 
-这是一套供教学 AI 使用的 Android App 素材。AI 应依据图片和说明，一次带学习者完成一个小任务，不要一次生成整套工程后让学习者自行理解。
+本目录提供 SYDRA Android App 的页面参考图、可用图片、产品流程和视觉说明。
 
-## 使用方法
+## 文件用途
 
-1. 把整个 `sydra-ai-material-pack/` 放进开发工作区。
-2. 将 `AI_PROMPT.md` 全文发送给教学 AI。
-3. AI 每次只讲解并完成一关。
-4. 学习者按 AI 给出的路径运行和验收，通过后回复 `ok`。
-
-## AI 需要查阅的文件
-
-| 文件 | 用途 |
+| 文件或目录 | 用法 |
 |---|---|
-| `AI_PROMPT.md` | 教学方式和开发要求 |
-| `PRODUCT_FLOW.md` | 页面、状态、跳转和返回关系 |
-| `DESIGN_GUIDE.md` | Android 视觉迁移规则 |
-| `SCREEN_INDEX.md` | 图片与页面对应关系 |
-| `MISSING_SPEC.md` | 不得虚构的后端和产品能力 |
-| `PROVENANCE_AND_USAGE.md` | 素材来源和使用提示 |
-| `manifest/assets.csv` | 图片尺寸和 SHA-256 |
+| `PRODUCT_FLOW.md` | 查询页面、状态、跳转、按钮条件和返回行为 |
+| `DESIGN_GUIDE.md` | 查询 360×800 dp 适配、颜色、间距和 Android 平台规则 |
+| `SCREEN_INDEX.md` | 根据页面名称定位参考图 |
+| `MISSING_SPEC.md` | 确认哪些功能没有后端或完整规格 |
+| `PROVENANCE_AND_USAGE.md` | 查询素材来源、证据优先级和使用限制 |
+| `manifest/assets.csv` | 查询每张图片的尺寸和 SHA-256 |
+| `assets/cleaned/` | 可直接放入 App 的 5 张内容图片 |
+| `references/screens-v1/` | 38 张基础页面和状态图 |
+| `references/figma-v2/` | 38 张补充状态图 |
+| `references/contact-sheets-v1/` | 5 张全局快速总览图 |
 
-## 图片目录
+## 查阅顺序
 
-- `assets/cleaned/`：5 张可直接用于 App 的内容图片。
-- `references/screens-v1/`：38 张基础页面和状态图。
-- `references/contact-sheets-v1/`：5 张快速总览图。
-- `references/figma-v2/`：38 张补充状态图。
+1. 用 `PRODUCT_FLOW.md` 确认当前页面的行为和状态。
+2. 用 `SCREEN_INDEX.md` 找到对应图片。
+3. 先看 `screens-v1/` 的基础页面；存在 V2 补充状态时再看 `figma-v2/`。
+4. 需要页面中的真实内容图片时使用 `assets/cleaned/`。
+5. 遇到资料缺口或冲突时查看 `MISSING_SPEC.md` 和 `PROVENANCE_AND_USAGE.md`。
 
-共 86 张图片。页面截图只用于对照，不能作为交互页面背景。
-
-## 开发边界
-
-- 目标为 Android 手机竖屏，重点验收 360×800 dp。
-- 使用 Kotlin、Jetpack Compose、Navigation Compose、ViewModel 和 StateFlow。
-- 无后端时只实现明确标注的本地教学状态。
-- 不绘制 iOS 状态栏、Home Indicator 或微信小程序胶囊。
-- 不虚构登录、支付、库存、订单或服务器接口。
-- 重复稿和同一页面的不同状态不能创建成重复路由。
-
-具体页面和视觉细节由 AI 按当前教学任务查阅，无需学习者预先读完全部文档。
+页面截图只用于视觉对照，不能作为交互页面背景。素材包没有真实后端、登录或支付能力。
