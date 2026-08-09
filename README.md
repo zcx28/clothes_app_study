@@ -1,11 +1,11 @@
-# SYDRA 服装 App 学习仓库
+# SYDRA 服装 App 教学资料
 
-本仓库现包含一份可独立交给其他 AI 使用的设计素材包：
+这套资料用于让教学 AI 一步一步带你开发 SYDRA Android App。
 
-- 在线可浏览目录：[`sydra-ai-material-pack/`](./sydra-ai-material-pack/)
-- 可直接下载的 ZIP：`SYDRA-AI-MATERIAL-PACK.zip`（生成后位于仓库根目录）
-- 可复制给 AI 的完整提示词：[`sydra-ai-material-pack/AI_PROMPT.md`](./sydra-ai-material-pack/AI_PROMPT.md)
+## 怎么使用
 
-素材包只包含图片、产品/视觉说明和素材清单，不包含 SYDRA 已实现 App 的源码、APK、后端、密钥或本机配置。仓库中原有的 Android 学习工程与 `示意图/` 不属于素材包本体。
+1. 下载 [`SYDRA-AI-MATERIAL-PACK.zip`](./SYDRA-AI-MATERIAL-PACK.zip) 并解压到开发工作区。
+2. 把 [`AI_PROMPT.md`](./sydra-ai-material-pack/AI_PROMPT.md) 的提示词发给教学 AI。
+3. 按 AI 给出的单个小任务操作；验收通过后回复 `ok`，再进入下一步。
 
-开始使用前，请先阅读素材包的 [`README.md`](./sydra-ai-material-pack/README.md) 和 [`PROVENANCE_AND_USAGE.md`](./sydra-ai-material-pack/PROVENANCE_AND_USAGE.md)。
+图片、流程和视觉说明在 [`sydra-ai-material-pack/`](./sydra-ai-material-pack/) 中。素材包不包含后端、服务器、支付凭据或生产账号。
