@@ -2,6 +2,17 @@
 
 本目录提供 SYDRA Android App 的页面参考图、可用图片、产品流程和视觉说明。
 
+## 从 GitHub 获取
+
+仓库地址：<https://github.com/zcx28/clothes_app_study>
+
+```powershell
+git clone https://github.com/zcx28/clothes_app_study.git
+cd clothes_app_study
+```
+
+如果素材分支还没有合并到 `main`，可直接下载：<https://github.com/zcx28/clothes_app_study/archive/refs/heads/agent/sydra-ai-material-pack.zip>
+
 ## 文件用途
 
 | 文件或目录 | 用法 |

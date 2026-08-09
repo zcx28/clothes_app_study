@@ -2,7 +2,17 @@
 
 将下面内容发给教学 AI，用来说明这套素材如何查阅和使用。
 
-```text
+````text
+如果工作区没有 `sydra-ai-material-pack/`，先从 GitHub 获取素材：
+
+```powershell
+git clone https://github.com/zcx28/clothes_app_study.git
+cd clothes_app_study
+```
+
+如果 `main` 尚未包含最新素材包，可下载素材分支 ZIP：
+https://github.com/zcx28/clothes_app_study/archive/refs/heads/agent/sydra-ai-material-pack.zip
+
 开发 SYDRA Android App 时，请使用工作区中的 `sydra-ai-material-pack/` 作为产品和视觉资料。
 
 素材使用方法：
@@ -25,4 +35,4 @@
 - 文案、商品、金额和图片以素材为准；资料没有证明的内容要明确标记为缺失，不得使用随机内容补齐。
 
 每次使用素材实现页面时，请说明本次依据的文档和图片文件，方便追溯。
-```
+````
