@@ -53,6 +53,8 @@ import com.sydra.app.feature.catalog.ProductListScreen
 import com.sydra.app.feature.catalog.ShopModeSelectionScreen
 import com.sydra.app.feature.home.HomeScreen
 import com.sydra.app.feature.profile.ProfileScreen
+import com.sydra.app.feature.profile.ProfileViewModel
+import com.sydra.app.data.api.SydraApiProvider
 
 @Composable
 fun SydraNavHost() {
@@ -72,7 +74,11 @@ fun SydraNavHost() {
 private fun MainScaffold() {
     val mainNavController = rememberNavController()
     val cartViewModel: CartViewModel = viewModel()
+    val profileViewModel: ProfileViewModel = viewModel(
+        factory = ProfileViewModel.Factory(SydraApiProvider.localPrototype)
+    )
     val cartItems by cartViewModel.items.collectAsState()
+    val profileUiState by profileViewModel.uiState.collectAsState()
     val backStackEntry by mainNavController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val usesDarkHeader = currentDestination?.hasRoute<SydraRoute.Home>() == true ||
@@ -207,7 +213,10 @@ private fun MainScaffold() {
                 )
             }
             composable<SydraRoute.Profile> {
-                ProfileScreen()
+                ProfileScreen(
+                    state = profileUiState,
+                    onRetry = profileViewModel::refresh
+                )
             }
         }
     }

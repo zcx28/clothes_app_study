@@ -73,10 +73,11 @@
 - `SydraRoute.kt` 已存在：`OrderList`、`OrderDetail`、`Logistics`、`AfterSaleList`、`AfterSaleDetail`、`ReturnRequest`、`AddressList`、`AddressForm`。
 - 已新增可替换 `SydraApi` 契约、API 错误模型、各业务 DTO、领域 Model、DTO→Model Mapper 和 `LocalPrototypeApi`。
 - `LocalPrototypeApi` 已覆盖五种订单状态、取消成功/资格失败、物流轨迹、售后提交、地址校验/默认值/删除限制、会员、帮助和客服发送失败重试。
+- `ProfileViewModel` 和 `ProfileUiState` 已接入个人页；用户名、会员等级来自 API Model，加载失败显示可重试状态。
 
 ### 4.2 尚未完成
 
-- Profile 真实用户状态、登录门禁和错误状态。
+- Profile 真实登录门禁和网络数据源；当前已完成本地 Profile Loading/Content/Error 状态。
 - Profile 下游 Route 的 NavHost 注册与页面实现。
 - Order/Address/AfterSale/Support 的 ViewModel、Repository 和网络数据源；当前只有 API 契约与本地原型数据源。
 - 真实 API、数据库、上传、退款、物流、客服与支付。
@@ -499,9 +500,9 @@ UI → UserAction → ViewModel → Repository → API / LocalPrototypeDataSourc
 - 验收：API/DTO/Model 编译通过；本地数据可覆盖五订单状态、空和错误状态，地址和客服具备可恢复错误。
 - 门禁：确认“售后”入口使用独立 `AfterSaleList`，以及取消订单适用状态。
 
-### 第 1 关：Profile 真实状态与全部入口导航
+### 第 1 关：Profile 真实状态与全部入口导航（进行中）
 
-- 目标：移除个人页入口的“即将开放” Snackbar，接入 Guest/Loading/Content/Error 和真实 Route 回调。
+- 目标：移除个人页入口的“即将开放” Snackbar，接入 Guest/Loading/Content/Error 和真实 Route 回调。本关已完成 LocalPrototype 的 Loading/Content/Error 和 ViewModel 数据链路；入口 Route 仍待下一小关完成。
 - 验收路径：`首页 → 我的 → 依次点击十个入口 → 到达正确目标页 → 返回个人页`。
 - 通过标准：五订单状态映射准确；返回后个人页不丢状态；无登录态进入短信登录门禁。
 

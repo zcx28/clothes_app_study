@@ -531,6 +531,17 @@ res/drawable-*                             图片资源和密度变体
 - 当前边界：`LocalPrototypeApi` 是离线确定性替身，不代表线上 API；真实 OpenAPI、鉴权、分页、上传、支付、物流、退款、客服和状态迁移仍需服务端契约。
 - 推荐教学选项：先学“DTO 为什么不能直接作为 UI Model”，再学“ApiResult 错误如何被 ViewModel 转成 Loading/Empty/Error”，最后学“LocalPrototype 如何替换为网络实现”。
 
+### 2026-08-10 / Profile API 状态接入（main）
+
+- 用户可见效果：个人主页继续保持参考图结构，但用户名、会员等级和订单数量语义现在由 `SydraApiProvider.localPrototype` 返回；加载期间使用稳定内容占位，API 失败时显示“个人信息加载失败”和“重试”。
+- 完整用户流程：`底部“我的” → ProfileViewModel.fetchProfile → ProfileDto → ProfileModel → ProfileUiState.Content → ProfileScreen`；失败路径为 `ApiResult.Failure → ProfileUiState.Error → 重试`。
+- 新概念：ViewModel 生命周期、`StateFlow` UI 状态、DTO 到 Domain Model 的 Mapper、错误状态到 UI 重试事件。
+- 项目层次变化：新增 `feature/profile/ProfileUiState.kt`、`feature/profile/ProfileViewModel.kt`；Profile 页面从硬编码用户文本改为读取 API Model；订单/会员/地址入口仍保持本地“即将开放”边界。
+- 修改文件和函数：`feature/profile/ProfileUiState.kt`、`feature/profile/ProfileViewModel.kt`、`feature/profile/ProfileScreen.kt` 的 `ProfileScreen`/`ProfileContent`/`ProfileError`/`ProfileOrders`；`navigation/SydraNavHost.kt` 的 `MainScaffold` 与 `SydraRoute.Profile` 内容；同步更新 `profile-wireflow-development-spec.md`。
+- 构建/模拟器结果：在 `/Users/zhouxianliang/Documents/ChatGPT/衣服app` 的 `main` 分支执行 `./gradlew :app:assembleDebug :app:lintDebug --no-daemon` 成功；安装到 `emulator-5554` 后进入个人页并确认 UI 正常，未发现崩溃日志。
+- 当前边界：当前 API 仍为离线 `LocalPrototypeApi`；Guest 登录门禁、真实网络失败、下游订单/地址/售后 Route 尚未接入。
+- 推荐教学选项：先学“ViewModel 如何把 API 结果转换成页面状态”，再学“为什么 ProfileScreen 不直接调用 API”。
+
 ## 10. 两个新任务的启动指令
 
 ### 开发任务启动指令

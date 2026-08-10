@@ -49,6 +49,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sydra.app.R
+import com.sydra.app.domain.model.OrderStatus
+import com.sydra.app.domain.model.ProfileModel
 import kotlinx.coroutines.launch
 
 private val Ink = Color(0xFF222222)
@@ -56,7 +58,11 @@ private val Secondary = Color(0xFF777777)
 private val Divider = Color(0xFFE9E9E9)
 
 @Composable
-fun ProfileScreen(modifier: Modifier = Modifier) {
+fun ProfileScreen(
+    state: ProfileUiState,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarScope = rememberCoroutineScope()
 
@@ -70,20 +76,19 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .background(Color.White)
-        ) {
-            ProfileHero()
-            Spacer(modifier = Modifier.height(28.dp))
-            ProfileOrders(onAction = ::showMessage)
-            Spacer(modifier = Modifier.height(28.dp))
-            ProfileMemberLinks(onAction = ::showMessage)
-            Spacer(modifier = Modifier.height(28.dp))
-            ProfileAddress(onClick = { showMessage("地址管理即将开放") })
-            Spacer(modifier = Modifier.height(20.dp))
+        when (state) {
+            ProfileUiState.Loading -> ProfileContent(
+                profile = null,
+                onAction = ::showMessage
+            )
+            is ProfileUiState.Content -> ProfileContent(
+                profile = state.profile,
+                onAction = ::showMessage
+            )
+            is ProfileUiState.Error -> ProfileError(
+                message = state.message,
+                onRetry = onRetry
+            )
         }
 
         SnackbarHost(
@@ -96,7 +101,61 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ProfileHero() {
+private fun ProfileContent(
+    profile: ProfileModel?,
+    onAction: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .background(Color.White)
+    ) {
+        ProfileHero(
+            displayName = profile?.displayName ?: "加载中",
+            memberLevel = profile?.memberLevel ?: "--"
+        )
+        Spacer(modifier = Modifier.height(28.dp))
+        ProfileOrders(
+            orderCounts = profile?.orderCounts.orEmpty(),
+            onAction = onAction
+        )
+        Spacer(modifier = Modifier.height(28.dp))
+        ProfileMemberLinks(onAction = onAction)
+        Spacer(modifier = Modifier.height(28.dp))
+        ProfileAddress(onClick = { onAction("地址管理即将开放") })
+        Spacer(modifier = Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun ProfileError(message: String, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(horizontal = 24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("个人信息加载失败", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(
+            text = message,
+            modifier = Modifier.padding(top = 10.dp),
+            color = Secondary,
+            fontSize = 13.sp
+        )
+        androidx.compose.material3.OutlinedButton(
+            onClick = onRetry,
+            modifier = Modifier.padding(top = 22.dp)
+        ) {
+            Text("重试")
+        }
+    }
+}
+
+@Composable
+private fun ProfileHero(displayName: String, memberLevel: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -144,7 +203,7 @@ private fun ProfileHero() {
                 }
             }
             Text(
-                text = "用户名",
+                text = displayName,
                 modifier = Modifier.padding(start = 12.dp),
                 color = Color.White,
                 fontSize = 20.sp,
@@ -152,6 +211,7 @@ private fun ProfileHero() {
             )
         }
         MemberBadge(
+            memberLevel = memberLevel,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .offset(y = 27.dp)
@@ -160,7 +220,7 @@ private fun ProfileHero() {
 }
 
 @Composable
-private fun MemberBadge(modifier: Modifier = Modifier) {
+private fun MemberBadge(memberLevel: String, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -183,7 +243,7 @@ private fun MemberBadge(modifier: Modifier = Modifier) {
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = "T5",
+                text = memberLevel,
                 color = Ink,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
@@ -193,7 +253,10 @@ private fun MemberBadge(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ProfileOrders(onAction: (String) -> Unit) {
+private fun ProfileOrders(
+    orderCounts: Map<OrderStatus, Int>,
+    onAction: (String) -> Unit
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -223,13 +286,14 @@ private fun ProfileOrders(onAction: (String) -> Unit) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             val orderItems = listOf(
-                OrderItem("待付款", Icons.Outlined.AccountBalanceWallet),
-                OrderItem("待发货", Icons.Outlined.Inventory2),
-                OrderItem("待收货", Icons.Outlined.LocalShipping),
-                OrderItem("已完成", Icons.Outlined.AssignmentTurnedIn),
-                OrderItem("售后", Icons.AutoMirrored.Outlined.ReceiptLong)
+                OrderItem("待付款", OrderStatus.PENDING_PAYMENT, Icons.Outlined.AccountBalanceWallet),
+                OrderItem("待发货", OrderStatus.PENDING_SHIPMENT, Icons.Outlined.Inventory2),
+                OrderItem("待收货", OrderStatus.PENDING_RECEIPT, Icons.Outlined.LocalShipping),
+                OrderItem("已完成", OrderStatus.COMPLETED, Icons.Outlined.AssignmentTurnedIn),
+                OrderItem("售后", OrderStatus.AFTER_SALE, Icons.AutoMirrored.Outlined.ReceiptLong)
             )
             orderItems.forEach { item ->
+                val count = orderCounts[item.status] ?: 0
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -243,7 +307,7 @@ private fun ProfileOrders(onAction: (String) -> Unit) {
                 ) {
                     Icon(
                         imageVector = item.icon,
-                        contentDescription = item.label,
+                        contentDescription = "${item.label}，${count} 个",
                         tint = Ink,
                         modifier = Modifier.size(25.dp)
                     )
@@ -378,5 +442,6 @@ private fun ProfileAddress(onClick: () -> Unit) {
 
 private data class OrderItem(
     val label: String,
+    val status: OrderStatus,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 )
