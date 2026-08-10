@@ -206,7 +206,11 @@ private fun MainScaffold() {
             composable<SydraRoute.Cart> {
                 CartScreen(
                     items = cartItems,
-                    onRemove = cartViewModel::remove,
+                    onToggleSelection = cartViewModel::toggleSelection,
+                    onSetAllSelected = cartViewModel::setAllSelected,
+                    onIncreaseQuantity = cartViewModel::increaseQuantity,
+                    onDecreaseQuantity = cartViewModel::decreaseQuantity,
+                    onUpdateSize = cartViewModel::updateSize,
                     onContinueShopping = {
                         mainNavController.navigateToTopLevel(TopLevelDestination.SHOP)
                     }

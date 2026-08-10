@@ -63,27 +63,32 @@ fun ShopModeSelectionScreen(
 }
 
 @Composable
-internal fun ShopHeader(onBackClick: (() -> Unit)? = null) {
+internal fun ShopHeader(
+    onBackClick: (() -> Unit)? = null,
+    showSearch: Boolean = true
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding()
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        IconButton(
-            onClick = { onBackClick?.invoke() },
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .size(48.dp)
-        ) {
-            Icon(
-                imageVector = if (onBackClick == null) {
-                    Icons.Outlined.Search
-                } else {
-                    Icons.Outlined.ArrowBack
-                },
-                contentDescription = if (onBackClick == null) "搜索" else "返回"
-            )
+        if (showSearch || onBackClick != null) {
+            IconButton(
+                onClick = { onBackClick?.invoke() },
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .size(48.dp)
+            ) {
+                Icon(
+                    imageVector = if (onBackClick == null) {
+                        Icons.Outlined.Search
+                    } else {
+                        Icons.Outlined.ArrowBack
+                    },
+                    contentDescription = if (onBackClick == null) "搜索" else "返回"
+                )
+            }
         }
         Image(
             painter = painterResource(R.drawable.sydra_wordmark),

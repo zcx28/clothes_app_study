@@ -14,10 +14,11 @@ data class CartLine(
     val size: String,
     val priceCents: Int,
     @DrawableRes val imageRes: Int,
-    val quantity: Int = 1
+    val quantity: Int = 1,
+    val selected: Boolean = true
 ) {
     val priceLabel: String
-        get() = "¥ ${priceCents / 100}.${(priceCents % 100).toString().padStart(2, '0')}"
+        get() = "¥${priceCents / 100}.${(priceCents % 100).toString().padStart(2, '0')}"
 }
 
 class CartViewModel : ViewModel() {
@@ -56,6 +57,38 @@ class CartViewModel : ViewModel() {
 
     fun remove(lineId: String) {
         _items.value = _items.value.filterNot { it.id == lineId }
+    }
+
+    fun toggleSelection(lineId: String) {
+        _items.value = _items.value.map { item ->
+            if (item.id == lineId) item.copy(selected = !item.selected) else item
+        }
+    }
+
+    fun setAllSelected(selected: Boolean) {
+        _items.value = _items.value.map { it.copy(selected = selected) }
+    }
+
+    fun increaseQuantity(lineId: String) {
+        _items.value = _items.value.map { item ->
+            if (item.id == lineId) item.copy(quantity = item.quantity + 1) else item
+        }
+    }
+
+    fun decreaseQuantity(lineId: String) {
+        _items.value = _items.value.map { item ->
+            if (item.id == lineId) {
+                item.copy(quantity = (item.quantity - 1).coerceAtLeast(1))
+            } else {
+                item
+            }
+        }
+    }
+
+    fun updateSize(lineId: String, size: String) {
+        _items.value = _items.value.map { item ->
+            if (item.id == lineId) item.copy(size = size) else item
+        }
     }
 
     fun totalCents(): Int = _items.value.sumOf { it.priceCents * it.quantity }
