@@ -2,11 +2,11 @@
 
 更新时间：2026-08-10
 
-工作树：`/Users/zhouxianliang/Documents/ChatGPT/develop tree`
+工作树：`/Users/zhouxianliang/Documents/ChatGPT/衣服app`
 
-分支：`codex/develop-tree`
+分支：`main`
 
-状态：个人主页 UI 已完成；本文定义个人主页之后的全部下游流程和分阶段开发计划，尚未授权一次性实现所有下游生产代码。
+状态：项目拥有者已授权按参考图直接完成订单、物流、退货售后和地址管理。当前已完成可运行的本地 `LocalPrototype` 闭环；真实后端、支付、退款和上传服务仍未接入。
 
 ## 1. 文档目标
 
@@ -69,17 +69,22 @@
 
 - `feature/profile/ProfileScreen.kt` 已实现个人主页视觉和入口。
 - `SydraRoute.Profile` 已接入 `SydraNavHost`。
-- 订单、会员、帮助、客服和地址入口当前显示“即将开放”反馈。
+- 个人页的全部订单、五状态订单、售后和收货地址入口已连接到真实 Route。
 - `SydraRoute.kt` 已存在：`OrderList`、`OrderDetail`、`Logistics`、`AfterSaleList`、`AfterSaleDetail`、`ReturnRequest`、`AddressList`、`AddressForm`。
 - 已新增可替换 `SydraApi` 契约、API 错误模型、各业务 DTO、领域 Model、DTO→Model Mapper 和 `LocalPrototypeApi`。
 - `LocalPrototypeApi` 已覆盖五种订单状态、取消成功/资格失败、物流轨迹、售后提交、地址校验/默认值/删除限制、会员、帮助和客服发送失败重试。
 - `ProfileViewModel` 和 `ProfileUiState` 已接入个人页；用户名、会员等级来自 API Model，加载失败显示可重试状态。
+- `feature/order` 已实现单 Route 五状态订单列表、订单快照详情、取消确认和操作资格驱动按钮。
+- `feature/logistics` 已实现物流摘要、轨迹时间线、脱敏收件信息和刷新。
+- `feature/aftersale` 已实现售后列表/详情和退货三步状态机；“其他”原因接入 Android Photo Picker 本地凭证选择。
+- `feature/address` 已实现地址列表、新增/编辑、默认地址、删除确认和字段校验。
+- `SydraCommerceRepository` 已把 Order/Logistics/AfterSale/Address 的 UI 数据链统一为 `UI → ViewModel → Repository → SydraApi → DTO → Model`。
 
 ### 4.2 尚未完成
 
 - Profile 真实登录门禁和网络数据源；当前已完成本地 Profile Loading/Content/Error 状态。
-- Profile 下游 Route 的 NavHost 注册与页面实现。
-- Order/Address/AfterSale/Support 的 ViewModel、Repository 和网络数据源；当前只有 API 契约与本地原型数据源。
+- 会员、帮助和客服的下游页面仍未实现；本次授权范围是订单、物流、售后和地址。
+- 订单、地址和售后已有 ViewModel/Repository，但当前数据源是本地原型，不是生产网络实现。
 - 真实 API、数据库、上传、退款、物流、客服与支付。
 
 ## 5. 总 Wireflow
@@ -130,6 +135,38 @@ flowchart TD
     ADDRESS --> FORM["AddressForm add/edit"]
     FORM -- "保存成功" --> ADDRESS
 ```
+
+### 5.1 2026-08-10 已落地交易闭环
+
+```mermaid
+flowchart TD
+    P["我的 / Profile"] --> OL["全部或五状态订单 / OrderList"]
+    P --> ASL["售后列表 / AfterSaleList"]
+    P --> AL["收货地址 / AddressList"]
+
+    OL -->|"切换 Tab，同一 Route 改 UiState"| OL
+    OL --> OD["订单快照详情 / OrderDetail"]
+    OL -->|"availableActions 允许"| LG["物流时间线 / Logistics"]
+    OL -->|"availableActions 允许"| RR["退货申请 / ReturnRequest"]
+    OD --> LG
+    OD --> RR
+    RR --> R1["确认订单项"]
+    R1 --> R2["选择原因"]
+    R2 -->|"非其他"| SUBMIT["幂等提交"]
+    R2 -->|"其他"| R3["问题描述 + Photo Picker 凭证"]
+    R3 --> SUBMIT
+    SUBMIT --> ASD["售后详情 / AfterSaleDetail"]
+    SUBMIT -->|"刷新"| OL
+    SUBMIT -->|"刷新数量"| P
+    ASL --> ASD
+
+    AL --> AF["地址表单 / AddressForm"]
+    AF -->|"校验失败：原页保留输入"| AF
+    AF -->|"保存成功：Saved 事件"| AL
+    AL -->|"设为默认 / 删除"| AL
+```
+
+顶部返回和 Android 系统返回统一使用 Navigation back stack；退货成功会移除提交页，直接进入售后详情，不会返回“提交中”状态。
 
 ## 6. Profile 入口 Wireflow
 
@@ -491,7 +528,7 @@ UI → UserAction → ViewModel → Repository → API / LocalPrototypeDataSourc
 
 ## 15. 开发计划
 
-每次只实施一个可验收的小任务；项目拥有者回复 `ok` 后进入下一关。
+原计划用于逐关开发；项目拥有者已于 2026-08-10 明确授权订单、物流、售后和地址作为一个完整批次直接实现。
 
 ### 第 0 关：冻结 Route、状态和本地契约（已完成）
 
@@ -500,37 +537,37 @@ UI → UserAction → ViewModel → Repository → API / LocalPrototypeDataSourc
 - 验收：API/DTO/Model 编译通过；本地数据可覆盖五订单状态、空和错误状态，地址和客服具备可恢复错误。
 - 门禁：确认“售后”入口使用独立 `AfterSaleList`，以及取消订单适用状态。
 
-### 第 1 关：Profile 真实状态与全部入口导航（进行中）
+### 第 1 关：Profile 本地状态与本批入口导航（LocalPrototype 已完成）
 
-- 目标：移除个人页入口的“即将开放” Snackbar，接入 Guest/Loading/Content/Error 和真实 Route 回调。本关已完成 LocalPrototype 的 Loading/Content/Error 和 ViewModel 数据链路；入口 Route 仍待下一小关完成。
-- 验收路径：`首页 → 我的 → 依次点击十个入口 → 到达正确目标页 → 返回个人页`。
-- 通过标准：五订单状态映射准确；返回后个人页不丢状态；无登录态进入短信登录门禁。
+- 目标：移除订单、售后和地址入口的“即将开放” Snackbar，接入 LocalPrototype Loading/Content/Error 和真实 Route 回调。
+- 验收路径：`首页 → 我的 → 全部/五状态订单、售后、收货地址 → 到达正确目标页 → 返回个人页`。
+- 通过标准：五订单状态映射准确；售后使用独立 `AfterSaleList`；返回后个人页不丢状态。Guest 短信登录门禁留待真实鉴权阶段。
 
-### 第 2 关：订单列表五状态
+### 第 2 关：订单列表五状态（LocalPrototype 已完成）
 
 - 目标：完成单 Route、多状态筛选的订单列表。
 - 验收路径：`我的 → 全部订单/任一状态 → 切换状态 → 打开订单 → 返回`。
 - 通过标准：Loading、Content、Empty、Error 全覆盖；返回恢复原 Tab/滚动；操作按钮来自 `availableActions`。
 
-### 第 3 关：订单详情与物流
+### 第 3 关：订单详情与物流（LocalPrototype 已完成）
 
 - 目标：实现订单快照详情和物流时间线。
 - 验收路径：`待收货 → 查看详情 → 查看物流 → 刷新 → 返回订单详情 → 返回原列表`。
 - 通过标准：空轨迹和错误可恢复；敏感地址/手机号脱敏；订单快照不随当前商品变化。
 
-### 第 4 关：取消订单
+### 第 4 关：取消订单（LocalPrototype 已完成）
 
 - 目标：实现二次确认、提交中、成功和失败重试。
 - 验收路径：`允许取消的订单 → 取消 → 保留订单/确认取消 → 成功或失败重试`。
 - 通过标准：重复点击只提交一次；成功刷新列表；失败不改变原状态。
 
-### 第 5 关：地址列表与表单
+### 第 5 关：地址列表与表单（LocalPrototype 已完成）
 
 - 目标：完成 Profile 的地址管理闭环。
 - 验收路径：`我的 → 收货地址 → 空态/列表 → 新增或编辑 → 校验失败 → 保存中 → 保存成功 → 返回列表`。
 - 通过标准：保存失败保留输入；默认地址唯一；系统返回与顶部返回一致。
 
-### 第 6 关：退货申请和售后状态
+### 第 6 关：退货申请和售后状态（LocalPrototype 已完成）
 
 - 目标：完成退货三步状态机、凭证选择、本地上传替身和售后列表/详情。
 - 验收路径：`待收货/已完成 → 退货 → 选择原因 → 其他原因与凭证 → 提交 → 待审核 → 退款中/完成/拒绝`。
@@ -589,7 +626,7 @@ UI → UserAction → ViewModel → Repository → API / LocalPrototypeDataSourc
 - 交接文档“最新开发记录”已追加准确文件、函数、结果和边界。
 - 只有项目拥有者明确验收 `ok` 后，教学任务才可把掌握结论写入 `memory.md`。
 
-## 18. 开发前必须确认的产品门禁
+## 18. 生产后端接入前必须确认的产品门禁
 
 | 优先级 | 决策 | 不确认的影响 |
 |---|---|---|
@@ -604,4 +641,4 @@ UI → UserAction → ViewModel → Repository → API / LocalPrototypeDataSourc
 | P1 | 客服渠道、会话保留和人工接入规则 | 只能完成本地聊天原型 |
 | P1 | 地址删除、默认地址和订单占用限制 | 地址操作规则不完整 |
 
-在这些门禁确认前，可开发确定性的本地 UI 状态与 Repository 契约，但不得声称真实业务能力已经上线。
+本次已在上述门禁未齐全的前提下完成确定性本地 UI 与 Repository/API 契约。因此可以验收页面和本地状态迁移，但不得把当前支付、取消、退货、退款、物流或地址保存声称为真实业务能力。

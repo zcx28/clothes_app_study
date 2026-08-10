@@ -542,6 +542,18 @@ res/drawable-*                             图片资源和密度变体
 - 当前边界：当前 API 仍为离线 `LocalPrototypeApi`；Guest 登录门禁、真实网络失败、下游订单/地址/售后 Route 尚未接入。
 - 推荐教学选项：先学“ViewModel 如何把 API 结果转换成页面状态”，再学“为什么 ProfileScreen 不直接调用 API”。
 
+### 2026-08-10 / 订单、物流、退货售后与地址管理闭环（main）
+
+- 用户可见效果：个人页的“全部订单”、待付款/待发货/待收货/已完成、“售后”和“收货地址”不再显示占位反馈，已进入可操作的正式 Compose 页面。订单支持五状态筛选、订单快照详情、取消二次确认、物流时间线；退货支持确认订单项、选原因、其他原因描述、Android Photo Picker 凭证及缩略图、提交后售后详情；地址支持列表、新增/编辑、本地校验、默认切换和删除确认。
+- 完整用户流程：`我的 → 全部/任一订单状态 → 列表 Tab → 订单详情/取消/物流/退货`；`退货 → 确认订单项 → 选择原因 → 其他原因时描述并选凭证 → 幂等提交 → 售后详情 → 售后列表`；`我的 → 收货地址 → 新增/编辑 → 校验失败保留输入 → 保存成功返回列表`。顶部与系统 Back 在退货步骤中使用同一逻辑；成功提交会清理退货 Route，不返回提交中状态。
+- 新概念：一个 Route 承载多筛选状态、`availableActions` 资格驱动 UI、订单/地址快照、取消和退货幂等键、`BackHandler` 与 Navigation back stack 协作、Photo Picker content URI 异步解码缩略图、`navigationBarsPadding()` 安全区，以及 `UI → ViewModel → Repository → SydraApi → DTO → Model` 的串联。
+- 项目层次变化：新增 `data/repository/CommerceRepositories.kt`；新增 `feature/order`、`feature/logistics`、`feature/aftersale`、`feature/address`和 `feature/common`；`SydraNavHost` 注册全部类型安全 Route 并共享订单/地址 ViewModel；`LocalPrototypeApi` 增加取消、退货和地址保存的幂等结果缓存；根目录 Spec 补充实际逻辑图和落地状态。
+- 修改文件和函数：`navigation/SydraNavHost.kt` 的 `MainScaffold`、Route 状态映射和下游 Composable 注册；`feature/profile/ProfileScreen.kt` 的 `ProfileScreen`/`ProfileOrders`/`ProfileAddress`；`feature/order/OrderViewModel.kt` 的 `OrderViewModel`/`OrderDetailViewModel`与 `OrderScreens.kt` 的列表、详情、取消弹窗；`feature/logistics/LogisticsScreen.kt`、`LogisticsViewModel.kt`；`feature/aftersale/AfterSaleViewModels.kt` 的 `ReturnRequestViewModel`/`AfterSaleListViewModel`/`AfterSaleDetailViewModel` 和 `AfterSaleScreens.kt` 的 `ReturnRequestScreen`/`EvidenceThumbnail`；`feature/address/AddressViewModel.kt`、`AddressScreens.kt`、`AddressValidation.kt`；`feature/common/CommerceComponents.kt`；`data/repository/CommerceRepositories.kt`；`data/local/LocalPrototypeApi.kt`；`data/mapper/SydraMappers.kt`；`domain/model/SydraModels.kt`。
+- 测试/设计证据：新增 `AddressValidationTest` 和 `LocalPrototypeApiTest`，覆盖地址校验、五订单状态、退货状态迁移、取消/退货幂等和默认地址唯一。`design-qa/commerce-*-comparison.png` 把每张参考图与模拟器成品放在同一对比图中；`design-qa.md` 最终结果为 passed。
+- 构建/模拟器结果：在 `/Users/zhouxianliang/Documents/ChatGPT/衣服app` 的 `main` 分支执行 `./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --no-daemon` 成功，7 个单元测试全部通过。APK 安装到 `emulator-5554` 后验证上述主流程、系统/顶部返回、底部安全区、Photo Picker、取消后空状态和 Profile 数量刷新；未发现 App `FATAL EXCEPTION`。
+- 当前边界：当前是可替换的离线 `LocalPrototypeApi`，不代表真实支付、取消、物流、上传、审核或退款已上线；收货地区暂为手工输入，真实地区字典和地址删除/订单占用规则待后端契约；会员、帮助和客服页面不在本次授权范围。已保留本次开始前 `ProfileScreen.kt` 的安全区改动，没有修改教学任务的 `memory.md`。
+- 推荐教学选项：先学“五订单状态为什么只用一个 Route”，再学“退货三步 UiState 和 BackHandler 如何协作”，然后学“地址表单如何从本地校验经 Repository 保存并用事件返回列表”。
+
 ## 10. 两个新任务的启动指令
 
 ### 开发任务启动指令

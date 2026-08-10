@@ -158,6 +158,16 @@ data class Address(
     val isDefault: Boolean
 )
 
+data class AddressDraft(
+    val id: String? = null,
+    val recipient: String,
+    val phone: String,
+    val region: List<String>,
+    val detail: String,
+    val tag: String,
+    val isDefault: Boolean
+)
+
 data class SupportCenterModel(
     val topics: List<String>,
     val disclaimer: String

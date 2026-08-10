@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -61,6 +62,9 @@ private val Divider = Color(0xFFE9E9E9)
 fun ProfileScreen(
     state: ProfileUiState,
     onRetry: () -> Unit,
+    onOpenOrders: (OrderStatus?) -> Unit,
+    onOpenAfterSales: () -> Unit,
+    onOpenAddress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -79,11 +83,17 @@ fun ProfileScreen(
         when (state) {
             ProfileUiState.Loading -> ProfileContent(
                 profile = null,
-                onAction = ::showMessage
+                onLocalAction = ::showMessage,
+                onOpenOrders = onOpenOrders,
+                onOpenAfterSales = onOpenAfterSales,
+                onOpenAddress = onOpenAddress
             )
             is ProfileUiState.Content -> ProfileContent(
                 profile = state.profile,
-                onAction = ::showMessage
+                onLocalAction = ::showMessage,
+                onOpenOrders = onOpenOrders,
+                onOpenAfterSales = onOpenAfterSales,
+                onOpenAddress = onOpenAddress
             )
             is ProfileUiState.Error -> ProfileError(
                 message = state.message,
@@ -103,7 +113,10 @@ fun ProfileScreen(
 @Composable
 private fun ProfileContent(
     profile: ProfileModel?,
-    onAction: (String) -> Unit
+    onLocalAction: (String) -> Unit,
+    onOpenOrders: (OrderStatus?) -> Unit,
+    onOpenAfterSales: () -> Unit,
+    onOpenAddress: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -118,12 +131,13 @@ private fun ProfileContent(
         Spacer(modifier = Modifier.height(28.dp))
         ProfileOrders(
             orderCounts = profile?.orderCounts.orEmpty(),
-            onAction = onAction
+            onOpenOrders = onOpenOrders,
+            onOpenAfterSales = onOpenAfterSales
         )
         Spacer(modifier = Modifier.height(28.dp))
-        ProfileMemberLinks(onAction = onAction)
+        ProfileMemberLinks(onAction = onLocalAction)
         Spacer(modifier = Modifier.height(28.dp))
-        ProfileAddress(onClick = { onAction("地址管理即将开放") })
+        ProfileAddress(onClick = onOpenAddress)
         Spacer(modifier = Modifier.height(20.dp))
     }
 }
@@ -173,15 +187,22 @@ private fun ProfileHero(displayName: String, memberLevel: String) {
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.18f))
         )
-        Image(
-            painter = painterResource(R.drawable.sydra_wordmark),
-            contentDescription = "SYDRA",
+        Box(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 26.dp)
-                .width(104.dp),
-            colorFilter = ColorFilter.tint(Color.White)
-        )
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Spacer(modifier = Modifier.size(48.dp))
+            Image(
+                painter = painterResource(R.drawable.sydra_wordmark),
+                contentDescription = "SYDRA",
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .width(112.dp),
+                colorFilter = ColorFilter.tint(Color.White)
+            )
+        }
         Row(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -255,7 +276,8 @@ private fun MemberBadge(memberLevel: String, modifier: Modifier = Modifier) {
 @Composable
 private fun ProfileOrders(
     orderCounts: Map<OrderStatus, Int>,
-    onAction: (String) -> Unit
+    onOpenOrders: (OrderStatus?) -> Unit,
+    onOpenAfterSales: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -264,7 +286,7 @@ private fun ProfileOrders(
                 .clickable(
                     role = Role.Button,
                     onClickLabel = "查看全部订单",
-                    onClick = { onAction("订单列表即将开放") }
+                    onClick = { onOpenOrders(null) }
                 )
                 .padding(horizontal = 20.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -300,7 +322,13 @@ private fun ProfileOrders(
                         .clickable(
                             role = Role.Button,
                             onClickLabel = "查看${item.label}订单",
-                            onClick = { onAction("${item.label}订单即将开放") }
+                            onClick = {
+                                if (item.status == OrderStatus.AFTER_SALE) {
+                                    onOpenAfterSales()
+                                } else {
+                                    onOpenOrders(item.status)
+                                }
+                            }
                         )
                         .padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally

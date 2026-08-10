@@ -34,6 +34,10 @@ import com.sydra.app.data.dto.SupportMessageDto
  * It is intentionally deterministic and must not be described as production data.
  */
 class LocalPrototypeApi : SydraApi {
+    private val cancelledOrdersByKey = mutableMapOf<String, CancelOrderResponseDto>()
+    private val returnRequestsByKey = mutableMapOf<String, AfterSaleDto>()
+    private val savedAddressesByKey = mutableMapOf<String, AddressDto>()
+
     private val orders = mutableListOf(
         order("pending-payment", OrderStatusDto.PENDING_PAYMENT, setOf(OrderActionDto.PAY, OrderActionDto.CANCEL)),
         order("pending-shipment", OrderStatusDto.PENDING_SHIPMENT, setOf(OrderActionDto.CANCEL, OrderActionDto.CHANGE_ADDRESS, OrderActionDto.SUPPORT)),
@@ -136,20 +140,21 @@ class LocalPrototypeApi : SydraApi {
         orderId: String,
         idempotencyKey: String
     ): ApiResult<CancelOrderResponseDto> {
+        cancelledOrdersByKey[idempotencyKey]?.let { return success(it) }
         val order = orders.firstOrNull { it.id == orderId }
             ?: return failure(ApiErrorCode.NOT_FOUND, "订单不存在")
         if (OrderActionDto.CANCEL !in order.availableActions) {
             return failure(ApiErrorCode.ORDER_NOT_ELIGIBLE, "当前订单不可取消")
         }
         orders.remove(order)
-        return success(
-            CancelOrderResponseDto(
-                orderId = orderId,
-                outcome = "CANCELLED",
-                updatedAt = "2026-08-10T10:30:00+08:00",
-                message = "订单已取消，本地原型已从当前订单列表移除。"
-            )
+        val result = CancelOrderResponseDto(
+            orderId = orderId,
+            outcome = "CANCELLED",
+            updatedAt = "2026-08-10T10:30:00+08:00",
+            message = "订单已取消，本地原型已从当前订单列表移除。"
         )
+        cancelledOrdersByKey[idempotencyKey] = result
+        return success(result)
     }
 
     override suspend fun fetchLogistics(orderId: String): ApiResult<LogisticsDto> =
@@ -182,6 +187,7 @@ class LocalPrototypeApi : SydraApi {
         request: ReturnSubmissionDto,
         idempotencyKey: String
     ): ApiResult<AfterSaleDto> {
+        returnRequestsByKey[idempotencyKey]?.let { return success(it) }
         val order = orders.firstOrNull { it.id == request.orderId }
             ?: return failure(ApiErrorCode.NOT_FOUND, "订单不存在")
         if (OrderActionDto.RETURN !in order.availableActions) {
@@ -213,6 +219,7 @@ class LocalPrototypeApi : SydraApi {
             status = OrderStatusDto.AFTER_SALE,
             availableActions = listOf(OrderActionDto.VIEW_DETAILS, OrderActionDto.SUPPORT)
         )
+        returnRequestsByKey[idempotencyKey] = result
         return success(result)
     }
 
@@ -222,6 +229,7 @@ class LocalPrototypeApi : SydraApi {
         address: AddressInputDto,
         idempotencyKey: String
     ): ApiResult<AddressDto> {
+        savedAddressesByKey[idempotencyKey]?.let { return success(it) }
         val validationError = validateAddress(address)
         if (validationError != null) return ApiResult.Failure(validationError)
 
@@ -240,6 +248,7 @@ class LocalPrototypeApi : SydraApi {
         )
         val existingIndex = addresses.indexOfFirst { it.id == id }
         if (existingIndex >= 0) addresses[existingIndex] = saved else addresses += saved
+        savedAddressesByKey[idempotencyKey] = saved
         return success(saved)
     }
 

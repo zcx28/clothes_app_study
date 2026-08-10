@@ -1,6 +1,7 @@
 package com.sydra.app.data.mapper
 
 import com.sydra.app.data.dto.AddressDto
+import com.sydra.app.data.dto.CancelOrderResponseDto
 import com.sydra.app.data.dto.AfterSaleDto
 import com.sydra.app.data.dto.AfterSaleStatusDto
 import com.sydra.app.data.dto.HelpArticleDto
@@ -17,6 +18,7 @@ import com.sydra.app.data.dto.SupportCenterDto
 import com.sydra.app.data.dto.SupportConversationDto
 import com.sydra.app.data.dto.SupportMessageDto
 import com.sydra.app.domain.model.Address
+import com.sydra.app.domain.model.CancelOrderResult
 import com.sydra.app.domain.model.AfterSaleRequest
 import com.sydra.app.domain.model.AfterSaleStatus
 import com.sydra.app.domain.model.HelpArticleModel
@@ -103,6 +105,18 @@ fun OrderDto.toModel(): Order = Order(
 
 fun PageDto<OrderDto>.toModel(): Page<Order> = Page(
     items = items.map(OrderDto::toModel),
+    nextCursor = nextCursor
+)
+
+fun CancelOrderResponseDto.toModel(): CancelOrderResult = CancelOrderResult(
+    orderId = orderId,
+    outcome = outcome,
+    updatedAt = updatedAt,
+    message = message
+)
+
+fun PageDto<AfterSaleDto>.toAfterSalePageModel(): Page<AfterSaleRequest> = Page(
+    items = items.map(AfterSaleDto::toModel),
     nextCursor = nextCursor
 )
 
