@@ -1,8 +1,10 @@
 # SYDRA Android App 第一阶段：项目分析
 
-状态：待项目拥有者确认  
+状态：已由项目拥有者确认（2026-08-12）
 分析依据：`示意图/` 中 38 张 PNG 设计图  
-当前工程：尚未创建 Android 项目；Git 已初始化但没有提交
+当前工程：Android 原型工程已创建；商品、购物车、订单、地址、物流、售后与客服仍使用本地替身，生产后端尚未创建
+
+> 2026-08-12 生产范围补充：首发为中国大陆公司主体的 SYDRA 自营成衣电商，约 10 单/日。首发只销售具有尺码 SKU 的普通成衣，Configurator 延后且正式包隐藏入口。后端采用 Kotlin/Spring Boot 模块化单体，部署在阿里云杭州地域。完整决定以 `backend-production-spec.md` 为准。
 
 ## 1. 产品理解
 
@@ -286,14 +288,9 @@ App
 
 #### P0：结算确认和支付设计缺失（支付渠道已确认）
 
-购物车有“结算”，订单有“付款”，但没有订单确认、地址选择、运费、优惠、支付结果页面。可选方向：
+购物车有“结算”，订单有“付款”，但原设计没有订单确认、地址选择、运费和支付结果页面。
 
-1. 补充正式设计稿；这是商业交付最稳妥的方案。
-2. 暂时复用默认地址，在购物车通过底部面板确认金额和地址，创建待付款订单后调用外部支付；不新增完整页面。
-
-在支付方案确认前只实现到“创建待付款订单”的可替换契约，不伪造真实支付成功。
-
-项目拥有者已于 2026-08-08 确认正式支付渠道为微信支付和支付宝。支付 SDK、商户配置、服务端支付单、回调验签和支付结果同步仍需在后端联调阶段落实；结算确认页或底部面板的最终交互设计仍待确认。
+项目拥有者已确认：新增正式订单确认页，展示商品、尺码、数量、地址、运费和服务端重算金额；首发全场包邮，运费明确显示 `¥0.00`。支付渠道为微信支付和支付宝。支付 SDK 的返回值不直接改变订单状态，只有服务端验签后的支付回调或主动查单结果可以确认付款成功。
 
 #### P0：订单状态设计互相冲突（领域状态已确认）
 
@@ -303,9 +300,9 @@ App
 
 设计中出现 `ROUTINE / ACT / FORM / EVENT / AVANT`，另有 `WEARABLE / ARTEFACTS` 和 `CORE`。需要产品给出最终分类树、排序和中英文/日文文案。
 
-#### P1：组件兼容规则（初期规则已确认）
+#### P1：Configurator 首发范围（已确认）
 
-项目拥有者已于 2026-08-08 确认：Configurator 初期所有组件暂时视为兼容，不在前端设置互斥或禁用组合。该规则用于早期产品开发，不代表生产与履约系统可以跳过校验；接入真实商品和下单能力前，仍必须由后端提供连接规格、层级、价格、库存及可生产性校验，并在创建订单前重新验证。
+Configurator 不进入首发生产范围，正式包隐藏其入口；后端首版不建立配置组件、兼容规则或配置订单能力。未来恢复该功能时必须重新完成产品、履约、库存、退货和服务端可生产性校验评审，不能直接把原型中的“全部兼容”带入生产。
 
 #### P1：搜索和会员卡片缺少目标页
 
@@ -393,7 +390,7 @@ Compose 根据状态重绘
 ### 2.5 网络与本地存储策略
 
 - 服务端是商品、库存、价格、订单、支付和售后的最终事实来源。
-- 商品分类和图片允许缓存；价格、库存与配置兼容性在下单前必须重新校验。
+- 商品分类和图片允许缓存；价格与库存必须在下单前由服务端重新校验。
 - 购物车可本地即时展示，但登录用户需要服务端同步和版本冲突处理。
 - 地址可缓存用于展示，提交订单时由服务端验证。
 - Token 不写入普通 DataStore，不出现在日志、截图或错误上报中。
@@ -406,13 +403,13 @@ Compose 根据状态重绘
 | User | id、displayName、avatarUrl、memberLevel | 我的页面和账号权限 |
 | Category | id、code、localizedName、mode、parentId、sortOrder | 标准商品/Configurator 分类树 |
 | Product | id、name、description、images、basePrice、sizes、status | 标准商品展示 |
-| Sku | id、productId、size、color、price、stock | 真正可购买库存单位 |
+| Sku | id、productId、size、price、stock | 首发真正可购买的尺码库存单位 |
 | Connector | id、code、label、constraints | D60/D90/D120 等连接规格 |
 | Component | id、categoryId、layer、connectorIds、price、images | Configurator 可选组件 |
 | CompatibilityRule | sourceId、targetId、ruleType、reason | 必选、互斥、兼容和层级规则 |
 | Configuration | id/draftId、size、selectedComponents、preview、totalPrice、validation | 用户的选配结果 |
 | Cart | id、items、selectedIds、total | 购物车整体状态 |
-| CartItem | id、productSku 或 configuration、quantity、priceSnapshot | 标准商品和选配商品统一承载 |
+| CartItem | id、productSku、quantity、selected | 首发购物车只承载标准商品 SKU |
 | Address | id、recipient、phone、region、detail、tag、isDefault | 收货信息 |
 | Order | id、displayNo、status、items、amounts、addressSnapshot、timestamps | 订单状态和金额快照 |
 | Payment | id、orderId、provider、status、amount | 支付流程，不把支付状态混入 UI 猜测 |
@@ -440,10 +437,9 @@ Compose 根据状态重绘
 | `GET /api/v1/categories` | mode、parentId | 分类树 | CATEGORY_NOT_FOUND |
 | `GET /api/v1/products` | categoryId、cursor、filters | 商品分页 | INVALID_FILTER |
 | `GET /api/v1/products/{id}` | productId | 商品、SKU、尺码、库存摘要 | PRODUCT_NOT_FOUND |
-| `GET /api/v1/configurator/options` | categoryId、size、selection | 可选组件、禁用原因、下一步 | INCOMPATIBLE_SELECTION |
-| `POST /api/v1/configurations/validate` | size、componentIds | 是否有效、价格、库存、预览 | CONFIG_INVALID、OUT_OF_STOCK |
+| Configurator 接口 | 首发不提供 | 正式包隐藏入口；未来重新评审 | NOT_IN_V1_SCOPE |
 | `GET /api/v1/cart` | 当前用户 | 购物车 | UNAUTHORIZED |
-| `POST /api/v1/cart/items` | sku/configuration、quantity | 更新后的购物车 | OUT_OF_STOCK、PRICE_CHANGED |
+| `POST /api/v1/cart/items` | skuId、quantity | 更新后的购物车 | OUT_OF_STOCK、PRICE_CHANGED |
 | `PATCH /api/v1/cart/items/{id}` | quantity、selected | 更新后的购物车 | CART_ITEM_NOT_FOUND |
 | `DELETE /api/v1/cart/items/{id}` | itemId | 204 | CART_ITEM_NOT_FOUND |
 | `POST /api/v1/orders` | cartItemIds、addressId、priceVersion | 待付款订单 | ADDRESS_INVALID、PRICE_CHANGED、OUT_OF_STOCK |
@@ -488,39 +484,9 @@ Content-Type: application/json
 }
 ```
 
-#### 配置校验
+Configurator 首发不提供生产请求或响应示例，避免原型契约被误接入正式交易链路。未来恢复该功能时单独完成接口评审。
 
-```http
-POST /api/v1/configurations/validate
-```
-
-```json
-{
-  "categoryId": "act",
-  "size": "M",
-  "componentIds": ["component_base_1", "component_layer_2"],
-  "connectorId": "d90"
-}
-```
-
-```json
-{
-  "valid": true,
-  "configurationToken": "cfg_signed_...",
-  "totalAmountMinor": 88000,
-  "currency": "CNY",
-  "previewUrl": "https://cdn.example.com/configs/preview.png",
-  "nextOptions": [
-    {
-      "componentId": "component_layer_3",
-      "enabled": false,
-      "disabledReason": "CONNECTOR_NOT_COMPATIBLE"
-    }
-  ]
-}
-```
-
-真实公司中，前端与后端会先共同确认这些请求/响应和错误码，再分别开发。前端可用相同 JSON 契约驱动本地替身，后端完成后只替换数据源，不重写页面。
+真实公司中，前端与后端会先共同确认请求、响应和错误码，再分别开发。前端可用相同 JSON 契约驱动本地替身，后端完成后只替换数据源，不重写页面。
 
 ## 5. 完整开发路线图概览
 
@@ -565,9 +531,9 @@ POST /api/v1/configurations/validate
 - [x] 给出 Android 技术路线、项目结构、导航、数据和存储方案。
 - [x] 建立初步领域模型和 API 协议方向。
 - [x] 记录设计冲突、缺失页面和高风险产品决策。
-- [ ] 项目拥有者确认本分析，或指出需要修改的产品假设。
+- [x] 项目拥有者于 2026-08-12 确认本分析及首发生产范围。
 
-项目拥有者回复 `ok` 后，本阶段通过，进入阶段 1 的第一个小任务：确认 Android 工程身份与本机开发环境，然后创建可运行的生产工程基线。
+后端交付按 `backend-production-spec.md` 的阶段门禁推进；每个小任务经人工验收并回复 `ok` 后才进入下一任务。
 
 ## 8. 阶段 1 环境基线
 
